@@ -199,9 +199,11 @@
   </footer>
 
   <script>
+    // Wait for DB to be ready before running everything
     window.addEventListener('dbReady', async () => {
+      
+      // 1. Fetch Content
       try {
-        // 1. Fetch Content
         const { data: contentData } = await db.from('site_content').select('*');
         if (contentData) {
           const c = {};
@@ -221,17 +223,18 @@
               document.getElementById('nav-phone').href = "tel:" + c['contact_phone'].replace(/\s/g, '');
           }
         }
+      } catch (err) { console.error("Error loading content:", err); }
 
-        // 2. Fetch Services
+      // 2. Fetch Services
+      try {
         const { data: services } = await db.from('services').select('*').order('display_order');
         const grid = document.getElementById('serviceGrid');
         const select = document.getElementById('eq-service');
         
         if (services && services.length > 0) {
-          grid.innerHTML = ''; // Clear the "Loading" text
+          grid.innerHTML = ''; 
           
           services.forEach(s => {
-            // If no image, use the emoji in the background
             const imgStyle = s.image_url 
               ? `background-image: url('${s.image_url}');`
               : `background-color: var(--sand); display: grid; place-items: center; font-size: 4rem;`;
@@ -253,14 +256,9 @@
         } else {
           grid.innerHTML = '<p style="text-align:center; width:100%; color:var(--muted);">No services added yet.</p>';
         }
-      } catch (err) {
-        console.error("Load error:", err);
-        document.getElementById('serviceGrid').innerHTML = '<p style="text-align:center; width:100%; color:red;">Error loading services.</p>';
-      }
-    });
+      } catch (err) { console.error("Error loading services:", err); }
 
-    // Handle Contact Form
-    document.addEventListener('DOMContentLoaded', () => {
+      // 3. Handle Contact Form Submit (Placed inside dbReady so it works perfectly)
       document.getElementById('enquiryForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = e.target.querySelector('button');
@@ -278,15 +276,21 @@
           message: document.getElementById('eq-msg').value
         };
 
-        const { error } = await db.from('enquiries').insert([payload]);
+        try {
+          const { error } = await db.from('enquiries').insert([payload]);
 
-        if (error) {
-          msgBox.textContent = 'Something went wrong: ' + error.message;
-          msgBox.style.background = '#ffebee'; msgBox.style.color = '#c62828'; msgBox.style.display = 'block';
-        } else {
+          if (error) throw error;
+
           msgBox.textContent = 'Thank you! We will be in touch shortly.';
-          msgBox.style.background = '#e8f5e9'; msgBox.style.color = '#2e7d32'; msgBox.style.display = 'block';
+          msgBox.style.background = '#e8f5e9'; 
+          msgBox.style.color = '#2e7d32'; 
+          msgBox.style.display = 'block';
           e.target.reset();
+        } catch (err) {
+          msgBox.textContent = 'Error: ' + err.message;
+          msgBox.style.background = '#ffebee'; 
+          msgBox.style.color = '#c62828'; 
+          msgBox.style.display = 'block';
         }
         
         btn.textContent = 'Send Message';
