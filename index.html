@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Greenvex Outdoor Design creates beautiful, water-wise gardens, irrigation systems, paving, artificial grass, painting, walls and AI security camera installation.">
+  <title>Greenvex Outdoor Design</title>
+  <script src="config.js"></script>
+  <style>
+    :root {
+      --forest: #174d35; --leaf: #3f8a4e; --sage: #d8efcf; --cream: #e8f3e5;
+      --sand: #dcebd6; --ink: #203b2b; --muted: #526b58; --white: #f8fcf6;
+      --serif: Georgia, "Times New Roman", serif; --sans: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--forest);
+      background-image: linear-gradient(rgba(21,70,43,0.58), rgba(21,70,43,0.58)), url("https://images.unsplash.com/photo-1605040666474-f69b1114323d?auto=format&fit=crop&w=2000&q=85");
+      background-position: center; background-size: cover; background-attachment: fixed;
+      color: var(--ink); font-family: var(--sans); line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
+    .container { width: min(1120px, 90%); margin: 0 auto; }
+
+    .topbar { background: var(--forest); color: #edf2e8; padding: 9px 0; font-size: 0.82rem; }
+    .topbar-inner { display: flex; justify-content: space-between; }
+
+    header { background: var(--white); position: sticky; top: 0; z-index: 10; box-shadow: 0 3px 18px rgba(27,48,35,0.07); }
+    .nav { min-height: 78px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+    .brand { display: flex; align-items: center; gap: 11px; color: var(--forest); font-family: var(--serif); font-size: 1.45rem; font-weight: bold; }
+    .brand-mark { display: grid; place-items: center; width: 39px; height: 39px; border-radius: 50% 50% 50% 10%; background: var(--leaf); color: white; font-size: 1.15rem; transform: rotate(-8deg); }
+    .brand-mark span { transform: rotate(8deg); }
+    .nav-links { display: flex; gap: 30px; color: #435247; font-size: 0.92rem; font-weight: 600; }
+    .nav-links a:hover { color: var(--leaf); }
+
+    .button { display: inline-block; border: 0; border-radius: 4px; background: var(--forest); color: white; padding: 14px 21px; font-size: 0.9rem; font-weight: bold; transition: 0.2s; cursor: pointer; }
+    .button:hover { background: var(--leaf); transform: translateY(-2px); }
+    .button-light { background: var(--white); color: var(--forest); }
+    .button-light:hover { background: var(--sage); color: var(--forest); }
+
+    .hero { min-height: 620px; display: flex; align-items: center; color: white; background: linear-gradient(90deg, rgba(15,43,33,0.82), rgba(15,43,33,0.12)), url("https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=2000&q=85") center 55% / cover no-repeat; }
+    .hero-content { max-width: 650px; padding: 90px 0; }
+    .eyebrow { display: inline-block; margin-bottom: 19px; color: #d6e6c9; font-size: 0.76rem; font-weight: bold; text-transform: uppercase; }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 500; line-height: 1.12; }
+    h1 { max-width: 650px; margin-bottom: 22px; font-size: clamp(3rem, 7vw, 5.8rem); }
+    .hero p { max-width: 520px; margin-bottom: 30px; font-size: 1.08rem; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 13px; }
+
+    .intro { padding: 88px 0 78px; background: rgba(232,243,229,0.90); }
+    .intro-grid { display: grid; grid-template-columns: 1fr 1.1fr; align-items: center; gap: 75px; }
+    .section-label { margin-bottom: 14px; color: var(--leaf); font-size: 0.76rem; font-weight: bold; text-transform: uppercase; }
+    h2 { margin-bottom: 20px; color: var(--forest); font-size: clamp(2.2rem, 4vw, 3.6rem); }
+    .intro-copy p, .section-heading p { color: var(--muted); }
+    .intro-copy .button { margin-top: 25px; }
+    .intro-photo { min-height: 390px; border-radius: 48% 48% 4px 4px; background-position: center; background-size: cover; }
+
+    .services { padding: 84px 0 92px; background: rgba(220,235,216,0.94); }
+    .section-heading { max-width: 650px; margin: 0 auto 46px; text-align: center; }
+    .service-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .service-card { background: var(--white); border-radius: 5px; box-shadow: 0 12px 30px rgba(34,58,38,0.07); overflow: hidden; display: flex; flex-direction: column; }
+    .service-image { height: 220px; background-position: center; background-size: cover; }
+    .service-copy { padding: 25px; flex: 1; display: flex; flex-direction: column; }
+    .service-copy h3 { margin-bottom: 10px; color: var(--forest); font-size: 1.55rem; }
+    .service-copy p { color: var(--muted); font-size: 0.94rem; flex: 1; }
+    .service-link { margin-top: 17px; color: var(--leaf); font-size: 0.86rem; font-weight: bold; }
+
+    .promise { padding: 85px 0; background: var(--forest); color: white; }
+    .promise-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; }
+    .promise h2 { color: white; }
+    .promise p { color: #d6e0d4; }
+    .promise-points { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .point { padding: 22px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; }
+    .point strong { display: block; margin-bottom: 7px; color: #d7e6c6; font-family: var(--serif); font-size: 1.25rem; font-weight: normal; }
+    .point span { color: #d6e0d4; font-size: 0.88rem; }
+
+    .contact { padding: 86px 0; background: rgba(220,235,214,0.94); }
+    .contact-form { max-width: 600px; margin: 40px auto 0; background: var(--white); padding: 30px; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: left; }
+    .contact-form input, .contact-form textarea, .contact-form select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #c3d4bd; border-radius: 4px; font-family: inherit; }
+    
+    footer { padding: 27px 0; background: #112e26; color: #d6e0d4; font-size: 0.85rem; }
+    .footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+    @media (max-width: 800px) {
+      .nav { flex-wrap: wrap; padding: 17px 0; } .nav-links { order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
+      .intro-grid, .promise-grid { grid-template-columns: 1fr; gap: 35px; }
+      .service-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 560px) {
+      .topbar-inner span:last-child { display: none; } .topbar-inner { justify-content: center; }
+      .service-grid, .promise-points { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <span>Thoughtful gardens. Smarter water.</span>
+      <span>Developed by LUMBA AI TECH</span>
+    </div>
+  </div>
+
+  <header>
+    <nav class="container nav" aria-label="Main navigation">
+      <a class="brand" href="#home"><span class="brand-mark"><span>✿</span></span><span>GREENVEX OUTDOOR DESIGNS</span></a>
+      <div class="nav-links">
+        <a href="#about">About</a><a href="#services">Services</a><a href="#approach">Our approach</a>
+        <a href="tel:" id="nav-phone">Call Us</a>
+      </div>
+      <a class="button" href="#contact">Get a consultation</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="container">
+        <div class="hero-content">
+          <span class="eyebrow" id="hero_eyebrow">Loading...</span>
+          <h1 id="hero_title">Loading content...</h1>
+          <p id="hero_subtitle"></p>
+          <div class="hero-actions">
+            <a class="button button-light" href="#contact">Start your garden</a>
+            <a class="button" href="#services">Explore our services</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="intro" id="about">
+      <div class="container intro-grid">
+        <div class="intro-copy">
+          <div class="section-label">A garden that feels like yours</div>
+          <h2 id="about_heading"></h2>
+          <p id="about_text"></p>
+          <a class="button" href="#contact">Tell us about your space</a>
+        </div>
+        <div class="intro-photo" id="about_image" role="img" aria-label="Lush green garden"></div>
+      </div>
+    </section>
+
+    <section class="services" id="services">
+      <div class="container">
+        <div class="section-heading">
+          <div class="section-label">What we do</div>
+          <h2>Everything your outdoor space needs.</h2>
+        </div>
+        <div class="service-grid" id="serviceGrid">
+           <!-- Services injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <section class="promise" id="approach">
+      <div class="container promise-grid">
+        <div>
+          <div class="section-label">Our approach</div>
+          <h2 id="approach_heading"></h2>
+          <p id="approach_text"></p>
+        </div>
+        <div class="promise-points">
+          <div class="point"><strong>Water wise</strong><span>Thoughtful irrigation choices reduce waste.</span></div>
+          <div class="point"><strong>Made for you</strong><span>Designs shaped around your lifestyle.</span></div>
+          <div class="point"><strong>Built to last</strong><span>Quality workmanship at every stage.</span></div>
+          <div class="point"><strong>Locally minded</strong><span>Planting selected to suit your region.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact" id="contact">
+      <div class="container" style="text-align: center;">
+        <div class="section-label">Let's get growing</div>
+        <h2 id="contact_heading"></h2>
+        <p id="contact_text"></p>
+        
+        <form class="contact-form" id="enquiryForm">
+          <h3 style="margin-bottom:15px;color:var(--forest);">Request a Consultation</h3>
+          <div id="formMsg" style="display:none; padding:10px; margin-bottom:15px; border-radius:4px; font-weight:bold; text-align:center;"></div>
+          
+          <input type="text" id="eq-name" placeholder="Your Name" required>
+          <input type="email" id="eq-email" placeholder="Email Address" required>
+          <input type="tel" id="eq-phone" placeholder="Phone Number">
+          <select id="eq-service">
+            <option value="">Select a Service...</option>
+          </select>
+          <textarea id="eq-msg" rows="4" placeholder="Tell us about your project..." required></textarea>
+          <button type="submit" class="button" style="width:100%;">Send Message</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <span>© 2026 Greenvex Outdoor Designers</span>
+      <span id="footer_tagline"></span>
+    </div>
+  </footer>
+
+  <script>
+    window.addEventListener('supabaseReady', async () => {
+      // 1. Fetch Content
+      const { data: contentData } = await supabase.from('site_content').select('*');
+      if (contentData) {
+        const c = {};
+        contentData.forEach(row => c[row.key] = row.value);
+        
+        ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','footer_tagline'].forEach(id => {
+          if (document.getElementById(id)) document.getElementById(id).textContent = c[id] || '';
+        });
+        
+        if (c['about_image_url']) document.getElementById('about_image').style.backgroundImage = `url('${c['about_image_url']}')`;
+        if (c['contact_phone']) {
+           document.getElementById('nav-phone').textContent = "Call: " + c['contact_phone'];
+           document.getElementById('nav-phone').href = "tel:" + c['contact_phone'].replace(/\s/g, '');
+        }
+      }
+
+      // 2. Fetch Services
+      const { data: services } = await supabase.from('services').select('*').order('display_order');
+      if (services && services.length) {
+        const grid = document.getElementById('serviceGrid');
+        const select = document.getElementById('eq-service');
+        grid.innerHTML = '';
+        
+        services.forEach(s => {
+          // Build Service Card
+          grid.innerHTML += `
+            <article class="service-card">
+              <div class="service-image" style="background-image: url('${s.image_url || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80'}');"></div>
+              <div class="service-copy">
+                <h3>${s.icon} ${s.title}</h3>
+                <p>${s.description}</p>
+                <a class="service-link" href="#contact">Enquire about this →</a>
+              </div>
+            </article>
+          `;
+          // Build select option
+          select.innerHTML += `<option value="${s.title}">${s.title}</option>`;
+        });
+      }
+    });
+
+    // Handle Contact Form Submit
+    document.getElementById('enquiryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      const msgBox = document.getElementById('formMsg');
+      btn.textContent = 'Sending...';
+      btn.disabled = true;
+
+      const payload = {
+        name: document.getElementById('eq-name').value,
+        email: document.getElementById('eq-email').value,
+        phone: document.getElementById('eq-phone').value,
+        service: document.getElementById('eq-service').value,
+        message: document.getElementById('eq-msg').value
+      };
+
+      const { error } = await supabase.from('enquiries').insert([payload]);
+
+      if (error) {
+        msgBox.textContent = 'Something went wrong. Please try again.';
+        msgBox.style.background = '#ffebee'; msgBox.style.color = '#c62828'; msgBox.style.display = 'block';
+      } else {
+        msgBox.textContent = 'Thank you! We will be in touch shortly.';
+        msgBox.style.background = '#e8f5e9'; msgBox.style.color = '#2e7d32'; msgBox.style.display = 'block';
+        e.target.reset();
+      }
+      
+      btn.textContent = 'Send Message';
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>
