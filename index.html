@@ -147,7 +147,6 @@
           <h2>Everything your outdoor space needs.</h2>
         </div>
         <div class="service-grid" id="serviceGrid">
-           <!-- Services injected by JS -->
            <p style="text-align:center; width:100%; color:var(--muted);">Loading services...</p>
         </div>
       </div>
@@ -200,11 +199,9 @@
   </footer>
 
   <script>
-    // Load content when DB is ready
     window.addEventListener('dbReady', async () => {
-      
-      // 1. Fetch Content
-      const { data: contentData } = await db.from('site_content').select('*');
+      // 1. Fetch Content (noCache forces fresh data)
+      const { data: contentData } = await db.from('site_content').select('*').noCache();
       if (contentData) {
         const c = {};
         contentData.forEach(row => c[row.key] = row.value);
@@ -215,15 +212,17 @@
           }
         });
         
-        if (c['about_image_url']) document.getElementById('about_image').style.backgroundImage = `url('${c['about_image_url']}')`;
+        if (c['about_image_url']) {
+          document.getElementById('about_image').style.backgroundImage = `url('${c['about_image_url']}')`;
+        }
         if (c['contact_phone']) {
             document.getElementById('nav-phone').textContent = "Call: " + c['contact_phone'];
             document.getElementById('nav-phone').href = "tel:" + c['contact_phone'].replace(/\s/g, '');
         }
       }
 
-      // 2. Fetch Services
-      const { data: services } = await db.from('services').select('*').order('display_order');
+      // 2. Fetch Services (noCache forces fresh data)
+      const { data: services } = await db.from('services').select('*').order('display_order').noCache();
       const grid = document.getElementById('serviceGrid');
       const select = document.getElementById('eq-service');
       
@@ -247,7 +246,7 @@
       }
     });
 
-    // Handle Contact Form (Independent of DB load event to prevent crashes)
+    // Handle Contact Form
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('enquiryForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -269,7 +268,7 @@
         const { error } = await db.from('enquiries').insert([payload]);
 
         if (error) {
-          msgBox.textContent = 'Something went wrong. Please try again.';
+          msgBox.textContent = 'Something went wrong: ' + error.message;
           msgBox.style.background = '#ffebee'; msgBox.style.color = '#c62828'; msgBox.style.display = 'block';
         } else {
           msgBox.textContent = 'Thank you! We will be in touch shortly.';
