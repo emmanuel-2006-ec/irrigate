@@ -117,9 +117,9 @@
     <section class="hero" id="home">
       <div class="container">
         <div class="hero-content">
-          <span class="eyebrow" id="hero_eyebrow">Loading...</span>
-          <h1 id="hero_title">Loading content...</h1>
-          <p id="hero_subtitle"></p>
+          <span class="eyebrow" id="hero_eyebrow">Garden design · Irrigation</span>
+          <h1 id="hero_title">Make room for a little more green.</h1>
+          <p id="hero_subtitle">Beautiful outdoor spaces, designed to thrive in your climate and use water wisely.</p>
           <div class="hero-actions">
             <a class="button button-light" href="#contact">Start your garden</a>
             <a class="button" href="#services">Explore our services</a>
@@ -132,8 +132,8 @@
       <div class="container intro-grid">
         <div class="intro-copy">
           <div class="section-label">A garden that feels like yours</div>
-          <h2 id="about_heading"></h2>
-          <p id="about_text"></p>
+          <h2 id="about_heading">Rooted in nature. Made for everyday life.</h2>
+          <p id="about_text">Whether you're refreshing a small courtyard or planning a complete landscape, we bring together considered design, healthy planting and dependable irrigation.</p>
           <a class="button" href="#contact">Tell us about your space</a>
         </div>
         <div class="intro-photo" id="about_image" role="img" aria-label="Lush green garden"></div>
@@ -148,6 +148,7 @@
         </div>
         <div class="service-grid" id="serviceGrid">
            <!-- Services injected by JS -->
+           <p style="text-align:center; width:100%; color:var(--muted);">Loading services...</p>
         </div>
       </div>
     </section>
@@ -156,8 +157,8 @@
       <div class="container promise-grid">
         <div>
           <div class="section-label">Our approach</div>
-          <h2 id="approach_heading"></h2>
-          <p id="approach_text"></p>
+          <h2 id="approach_heading">Good gardens work with nature.</h2>
+          <p id="approach_text">We choose plants suited to local conditions, plan for efficient water use and create spaces that invite you outside.</p>
         </div>
         <div class="promise-points">
           <div class="point"><strong>Water wise</strong><span>Thoughtful irrigation choices reduce waste.</span></div>
@@ -171,8 +172,8 @@
     <section class="contact" id="contact">
       <div class="container" style="text-align: center;">
         <div class="section-label">Let's get growing</div>
-        <h2 id="contact_heading"></h2>
-        <p id="contact_text"></p>
+        <h2 id="contact_heading">Your next favourite place might be just outside.</h2>
+        <p id="contact_text">Tell us what you have in mind. We'd love to help you plan a garden that feels just right.</p>
         
         <form class="contact-form" id="enquiryForm">
           <h3 style="margin-bottom:15px;color:var(--forest);">Request a Consultation</h3>
@@ -194,86 +195,90 @@
   <footer>
     <div class="container footer-inner">
       <span>© 2026 Greenvex Outdoor Designers</span>
-      <span id="footer_tagline"></span>
+      <span id="footer_tagline">Thoughtful gardens, grown with care.</span>
     </div>
   </footer>
 
   <script>
-    // Wait until the HTML is fully loaded AND the db is ready
-    window.addEventListener('DOMContentLoaded', () => {
-      window.addEventListener('dbReady', async () => {
+    // Load content when DB is ready
+    window.addEventListener('dbReady', async () => {
+      
+      // 1. Fetch Content
+      const { data: contentData } = await db.from('site_content').select('*');
+      if (contentData) {
+        const c = {};
+        contentData.forEach(row => c[row.key] = row.value);
         
-        // 1. Fetch Content
-        const { data: contentData } = await db.from('site_content').select('*');
-        if (contentData) {
-          const c = {};
-          contentData.forEach(row => c[row.key] = row.value);
-          
-          ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','footer_tagline'].forEach(id => {
-            if (document.getElementById(id)) document.getElementById(id).textContent = c[id] || '';
-          });
-          
-          if (c['about_image_url']) document.getElementById('about_image').style.backgroundImage = `url('${c['about_image_url']}')`;
-          if (c['contact_phone']) {
-             document.getElementById('nav-phone').textContent = "Call: " + c['contact_phone'];
-             document.getElementById('nav-phone').href = "tel:" + c['contact_phone'].replace(/\s/g, '');
+        ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','footer_tagline'].forEach(id => {
+          if (document.getElementById(id) && c[id]) {
+            document.getElementById(id).textContent = c[id];
           }
-        }
-
-        // 2. Fetch Services
-        const { data: services } = await db.from('services').select('*').order('display_order');
-        if (services && services.length) {
-          const grid = document.getElementById('serviceGrid');
-          const select = document.getElementById('eq-service');
-          grid.innerHTML = '';
-          
-          services.forEach(s => {
-            // Build Service Card
-            grid.innerHTML += `
-              <article class="service-card">
-                <div class="service-image" style="background-image: url('${s.image_url || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80'}');"></div>
-                <div class="service-copy">
-                  <h3>${s.icon} ${s.title}</h3>
-                  <p>${s.description}</p>
-                  <a class="service-link" href="#contact">Enquire about this →</a>
-                </div>
-              </article>
-            `;
-            // Build select option
-            select.innerHTML += `<option value="${s.title}">${s.title}</option>`;
-          });
-        }
-
-        // 3. Handle Contact Form Submit
-        document.getElementById('enquiryForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const btn = e.target.querySelector('button');
-          const msgBox = document.getElementById('formMsg');
-          btn.textContent = 'Sending...';
-          btn.disabled = true;
-
-          const payload = {
-            name: document.getElementById('eq-name').value,
-            email: document.getElementById('eq-email').value,
-            phone: document.getElementById('eq-phone').value,
-            service: document.getElementById('eq-service').value,
-            message: document.getElementById('eq-msg').value
-          };
-
-          const { error } = await db.from('enquiries').insert([payload]);
-
-          if (error) {
-            msgBox.textContent = 'Something went wrong. Please try again.';
-            msgBox.style.background = '#ffebee'; msgBox.style.color = '#c62828'; msgBox.style.display = 'block';
-          } else {
-            msgBox.textContent = 'Thank you! We will be in touch shortly.';
-            msgBox.style.background = '#e8f5e9'; msgBox.style.color = '#2e7d32'; msgBox.style.display = 'block';
-            e.target.reset();
-          }
-          
-          btn.textContent = 'Send Message';
-          btn.disabled = false;
         });
+        
+        if (c['about_image_url']) document.getElementById('about_image').style.backgroundImage = `url('${c['about_image_url']}')`;
+        if (c['contact_phone']) {
+            document.getElementById('nav-phone').textContent = "Call: " + c['contact_phone'];
+            document.getElementById('nav-phone').href = "tel:" + c['contact_phone'].replace(/\s/g, '');
+        }
+      }
+
+      // 2. Fetch Services
+      const { data: services } = await db.from('services').select('*').order('display_order');
+      const grid = document.getElementById('serviceGrid');
+      const select = document.getElementById('eq-service');
+      
+      if (services && services.length) {
+        grid.innerHTML = '';
+        services.forEach(s => {
+          grid.innerHTML += `
+            <article class="service-card">
+              <div class="service-image" style="background-image: url('${s.image_url || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80'}');"></div>
+              <div class="service-copy">
+                <h3>${s.icon} ${s.title}</h3>
+                <p>${s.description}</p>
+                <a class="service-link" href="#contact">Enquire about this →</a>
+              </div>
+            </article>
+          `;
+          select.innerHTML += `<option value="${s.title}">${s.title}</option>`;
+        });
+      } else {
+        grid.innerHTML = '<p style="text-align:center; width:100%; color:var(--muted);">No services added yet.</p>';
+      }
+    });
+
+    // Handle Contact Form (Independent of DB load event to prevent crashes)
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('enquiryForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        const msgBox = document.getElementById('formMsg');
+        
+        btn.textContent = 'Sending...';
+        btn.disabled = true;
+        msgBox.style.display = 'none';
+
+        const payload = {
+          name: document.getElementById('eq-name').value,
+          email: document.getElementById('eq-email').value,
+          phone: document.getElementById('eq-phone').value,
+          service: document.getElementById('eq-service').value,
+          message: document.getElementById('eq-msg').value
+        };
+
+        const { error } = await db.from('enquiries').insert([payload]);
+
+        if (error) {
+          msgBox.textContent = 'Something went wrong. Please try again.';
+          msgBox.style.background = '#ffebee'; msgBox.style.color = '#c62828'; msgBox.style.display = 'block';
+        } else {
+          msgBox.textContent = 'Thank you! We will be in touch shortly.';
+          msgBox.style.background = '#e8f5e9'; msgBox.style.color = '#2e7d32'; msgBox.style.display = 'block';
+          e.target.reset();
+        }
+        
+        btn.textContent = 'Send Message';
+        btn.disabled = false;
       });
     });
   </script>
