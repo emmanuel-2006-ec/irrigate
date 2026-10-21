@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Greenvex Admin</title>
+  <script src="config.js"></script>
+  <style>
+    :root {
+      --forest:#174d35; --leaf:#3f8a4e; --sage:#d8efcf; --cream:#e8f3e5;
+      --sand:#dcebd6; --ink:#203b2b; --muted:#526b58; --white:#f8fcf6;
+      --danger:#a33b2b; --serif:Georgia,"Times New Roman",serif;
+      --sans:"Trebuchet MS","Segoe UI",Arial,sans-serif;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:var(--sans); background:var(--cream); color:var(--ink); line-height:1.55; min-height:100vh; }
+    a { color:var(--forest); text-decoration:none; }
+    button { font-family:inherit; cursor:pointer; }
+
+    /* Login */
+    .login-wrap { min-height:100vh; display:grid; place-items:center; padding:24px;
+      background: linear-gradient(rgba(15,43,33,0.82),rgba(15,43,33,0.82)),
+      url("https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1600&q=80") center/cover no-repeat; }
+    .login-card { width:min(400px,100%); background:var(--white); padding:34px; border-radius:6px; box-shadow:0 20px 50px rgba(0,0,0,0.25); }
+    .login-card h2 { font-family:var(--serif); color:var(--forest); margin-bottom:20px; font-size:1.8rem; text-align:center; }
+    
+    label { display:block; font-size:0.82rem; font-weight:bold; color:var(--forest); margin-bottom:6px; }
+    input, select, textarea { width:100%; padding:11px 13px; border:1px solid #c3d4bd; border-radius:4px; font-family:inherit; font-size:0.92rem; margin-bottom:14px; }
+    input:focus, select:focus, textarea:focus { outline:2px solid var(--leaf); border-color:var(--leaf); }
+    
+    .btn { display:inline-block; border:0; border-radius:4px; background:var(--forest); color:#fff; padding:11px 18px; font-size:0.88rem; font-weight:bold; transition:background .2s; }
+    .btn:hover { background:var(--leaf); }
+    .btn-block { width:100%; }
+    .btn-light { background:var(--white); color:var(--forest); border:1px solid #c3d4bd; }
+    .btn-light:hover { background:var(--sage); }
+    .btn-danger { background:var(--danger); }
+    .btn-danger:hover { background:#7d2c1f; }
+    .error { color:var(--danger); font-size:0.85rem; margin-bottom:10px; display:none; }
+
+    /* App Shell */
+    .app { display:none; min-height:100vh; }
+    .app.active { display:block; }
+    .app-header { background:var(--forest); color:#edf2e8; padding:0 24px; display:flex; align-items:center; justify-content:space-between; min-height:64px; position:sticky; top:0; z-index:20; }
+    .app-header .brand { color:#fff; font-family:var(--serif); font-size:1.15rem; font-weight:bold; }
+    .app-header nav { display:flex; gap:6px; flex-wrap:wrap; }
+    .tab { background:transparent; border:1px solid transparent; color:#d6e0d4; padding:8px 14px; border-radius:4px; font-size:0.85rem; font-weight:bold; }
+    .tab:hover { background:rgba(255,255,255,0.1); color:#fff; }
+    .tab.active { background:var(--leaf); color:#fff; }
+    .app-header .logout { background:rgba(255,255,255,0.12); color:#fff; border:0; padding:8px 14px; border-radius:4px; font-size:0.82rem; font-weight:bold; }
+    
+    .app-body { padding:30px 24px 60px; max-width:1100px; margin:0 auto; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .panel-head { margin-bottom:22px; }
+    h2 { font-family:var(--serif); font-weight:500; color:var(--forest); font-size:1.9rem; }
+    p.sub { color:var(--muted); font-size:0.9rem; margin-top:4px; }
+
+    .card { background:var(--white); border-radius:6px; padding:22px; box-shadow:0 6px 20px rgba(34,58,38,0.06); margin-bottom:18px; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media (max-width:640px){ .grid-2 { grid-template-columns:1fr; } }
+    
+    .table-wrap { overflow-x:auto; background:var(--white); border-radius:6px; box-shadow:0 6px 20px rgba(34,58,38,0.06); }
+    table { width:100%; border-collapse:collapse; font-size:0.88rem; min-width:640px; }
+    th { text-align:left; padding:13px 16px; background:var(--sand); color:var(--forest); font-size:0.76rem; text-transform:uppercase; }
+    td { padding:13px 16px; border-top:1px solid #e2ecdf; vertical-align:top; }
+    .pill { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:bold; text-transform:uppercase; }
+    .pill.new { background:var(--sage); color:var(--forest); }
+    .pill.replied { background:var(--leaf); color:#fff; }
+    .pill.closed { background:#cfd8cc; color:var(--muted); }
+    .row-actions button { background:none; border:0; color:var(--leaf); font-weight:bold; font-size:0.82rem; padding:2px 6px; }
+    .row-actions .del { color:var(--danger); }
+
+    .toast { position:fixed; bottom:24px; right:24px; background:var(--forest); color:#fff; padding:13px 20px; border-radius:5px; font-size:0.88rem; transform:translateY(120%); transition:transform .3s ease; z-index:100; }
+    .toast.show { transform:translateY(0); }
+    .toast.error { background:var(--danger); }
+    
+    .img-preview { width: 100%; height: 150px; object-fit: cover; border-radius: 4px; margin-top: 6px; display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div class="login-wrap" id="loginWrap">
+    <form class="login-card" id="loginForm">
+      <h2>Greenvex Admin</h2>
+      <div class="error" id="loginErr">Incorrect email or password.</div>
+      <label>Email</label>
+      <input id="email" type="email" required autocomplete="username">
+      <label>Password</label>
+      <input id="pass" type="password" required autocomplete="current-password">
+      <button class="btn btn-block" type="submit" id="loginBtn">Sign in</button>
+    </form>
+  </div>
+
+  <!-- APP -->
+  <div class="app" id="app">
+    <header class="app-header">
+      <div class="brand">✿ Greenvex Admin</div>
+      <nav>
+        <button class="tab active" data-tab="content">Site Content</button>
+        <button class="tab" data-tab="services">Services</button>
+        <button class="tab" data-tab="enquiries">Enquiries</button>
+      </nav>
+      <button class="logout" id="logoutBtn">Log out</button>
+    </header>
+
+    <div class="app-body">
+      
+      <!-- CONTENT TAB -->
+      <section class="panel active" id="panel-content">
+        <div class="panel-head">
+          <h2>Site Content</h2>
+          <p class="sub">Edit the text and images that appear on the public website.</p>
+        </div>
+        <form id="contentForm" class="card">
+          <div class="grid-2">
+            <div>
+              <label>Hero Eyebrow</label>
+              <input id="hero_eyebrow">
+              <label>Hero Title</label>
+              <input id="hero_title">
+              <label>Hero Subtitle</label>
+              <textarea id="hero_subtitle" rows="3"></textarea>
+            </div>
+            <div>
+              <label>About Heading</label>
+              <input id="about_heading">
+              <label>About Text</label>
+              <textarea id="about_text" rows="5"></textarea>
+            </div>
+          </div>
+          <hr style="margin:20px 0;border:0;border-top:1px solid #e2ecdf;">
+          <label>About Image (Upload new)</label>
+          <input type="file" id="about_image_file" accept="image/*" style="margin-bottom:10px;">
+          <input type="hidden" id="about_image_url">
+          <img id="about_img_preview" class="img-preview">
+          
+          <hr style="margin:20px 0;border:0;border-top:1px solid #e2ecdf;">
+          <div class="grid-2">
+            <div>
+              <label>Approach Heading</label>
+              <input id="approach_heading">
+              <label>Approach Text</label>
+              <textarea id="approach_text" rows="3"></textarea>
+            </div>
+            <div>
+              <label>Contact Heading</label>
+              <input id="contact_heading">
+              <label>Contact Text</label>
+              <textarea id="contact_text" rows="3"></textarea>
+            </div>
+          </div>
+          <hr style="margin:20px 0;border:0;border-top:1px solid #e2ecdf;">
+          <div class="grid-2">
+             <div>
+               <label>Phone Number</label>
+               <input id="contact_phone">
+             </div>
+             <div>
+               <label>Email Address</label>
+               <input id="contact_email">
+             </div>
+          </div>
+          <label>Footer Tagline</label>
+          <input id="footer_tagline">
+          
+          <button class="btn" type="submit" style="margin-top:20px;" id="saveContentBtn">Save All Content</button>
+        </form>
+      </section>
+
+      <!-- SERVICES TAB -->
+      <section class="panel" id="panel-services">
+        <div class="panel-head">
+          <h2>Services</h2>
+          <p class="sub">Manage the service cards on the homepage.</p>
+        </div>
+        <div class="card">
+          <form id="serviceForm">
+            <input type="hidden" id="sv-id">
+            <div class="grid-2">
+              <div>
+                <label>Service Title</label>
+                <input id="sv-title" required>
+              </div>
+              <div>
+                <label>Icon (Emoji)</label>
+                <input id="sv-icon" maxlength="4" value="🌿" required>
+              </div>
+            </div>
+            <label>Description</label>
+            <textarea id="sv-desc" rows="2" required></textarea>
+            
+            <label>Image</label>
+            <input type="file" id="sv-image-file" accept="image/*">
+            <input type="hidden" id="sv-image-url">
+            <img id="sv-img-preview" class="img-preview">
+            
+            <div style="margin-top:15px; display:flex; gap:10px;">
+              <button class="btn" type="submit" id="sv-save-btn">Add Service</button>
+              <button class="btn btn-light" type="button" id="sv-cancel-btn" style="display:none;">Cancel Edit</button>
+            </div>
+          </form>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Image</th><th>Title</th><th>Actions</th></tr></thead>
+            <tbody id="serviceRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ENQUIRIES TAB -->
+      <section class="panel" id="panel-enquiries">
+        <div class="panel-head">
+          <h2>Enquiries</h2>
+          <p class="sub">Messages from the contact form.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Name</th><th>Contact</th><th>Message</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="enquiryRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let currentImageUrl = null;
+    let currentSvImageUrl = null;
+    let editingServiceId = null;
+
+    // -- Init --
+    window.addEventListener('supabaseReady', async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) showApp();
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      btn.textContent = 'Signing in...';
+      const { error } = await supabase.auth.signInWithPassword({
+        email: document.getElementById('email').value,
+        password: document.getElementById('pass').value
+      });
+      if (error) {
+        document.getElementById('loginErr').style.display = 'block';
+        btn.textContent = 'Sign in';
+      } else {
+        document.getElementById('loginErr').style.display = 'none';
+        showApp();
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      location.reload();
+    });
+
+    function showApp() {
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('app').classList.add('active');
+      loadContent();
+      loadServices();
+      loadEnquiries();
+    }
+
+    function showToast(msg, isError=false) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show' + (isError ? ' error' : '');
+      setTimeout(() => t.className = 'toast', 3000);
+    }
+
+    // -- Tabs --
+    document.querySelectorAll('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // -- Image Upload Helper --
+    async function uploadImage(file) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const { error } = await supabase.storage.from('site-images').upload(fileName, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from('site-images').getPublicUrl(fileName);
+      return data.publicUrl;
+    }
+
+    // -- Content Editor --
+    async function loadContent() {
+      const { data } = await supabase.from('site_content').select('*');
+      if (!data) return;
+      const content = {};
+      data.forEach(row => content[row.key] = row.value);
+
+      const fields = ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','contact_phone','contact_email','footer_tagline'];
+      fields.forEach(f => {
+        if(document.getElementById(f)) document.getElementById(f).value = content[f] || '';
+      });
+
+      currentImageUrl = content['about_image_url'];
+      const preview = document.getElementById('about_img_preview');
+      if (currentImageUrl) {
+        preview.src = currentImageUrl;
+        preview.style.display = 'block';
+      }
+    }
+
+    document.getElementById('about_image_file').addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const preview = document.getElementById('about_img_preview');
+          preview.src = ev.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+
+    document.getElementById('contentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('saveContentBtn');
+      btn.textContent = 'Saving...';
+
+      try {
+        const file = document.getElementById('about_image_file').files[0];
+        if (file) {
+          currentImageUrl = await uploadImage(file);
+        }
+
+        const fields = ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','contact_phone','contact_email','footer_tagline'];
+        const updates = fields.map(f => ({
+          key: f,
+          value: document.getElementById(f).value
+        }));
+        updates.push({ key: 'about_image_url', value: currentImageUrl });
+
+        // Upsert each row (requires RLS authenticated access)
+        for (const update of updates) {
+          await supabase.from('site_content').upsert(update);
+        }
+        
+        showToast('Content saved successfully');
+        document.getElementById('about_image_file').value = '';
+      } catch (err) {
+        showToast('Error saving content', true);
+        console.error(err);
+      }
+      btn.textContent = 'Save All Content';
+    });
+
+    // -- Services Manager --
+    async function loadServices() {
+      const { data } = await supabase.from('services').select('*').order('display_order');
+      const tbody = document.getElementById('serviceRows');
+      if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center">No services yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(s => `
+        <tr>
+          <td>${s.image_url ? `<img src="${s.image_url}" style="width:60px;height:40px;object-fit:cover;border-radius:4px;">` : s.icon}</td>
+          <td><strong>${s.title}</strong></td>
+          <td class="row-actions">
+            <button onclick="editService('${s.id}')">Edit</button>
+            <button class="del" onclick="deleteService('${s.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window.editService = async (id) => {
+      const { data } = await supabase.from('services').select('*').eq('id', id).single();
+      if (!data) return;
+      document.getElementById('sv-id').value = data.id;
+      document.getElementById('sv-title').value = data.title;
+      document.getElementById('sv-icon').value = data.icon;
+      document.getElementById('sv-desc').value = data.description;
+      currentSvImageUrl = data.image_url;
+      
+      const preview = document.getElementById('sv-img-preview');
+      if (currentSvImageUrl) {
+        preview.src = currentSvImageUrl;
+        preview.style.display = 'block';
+      } else {
+        preview.style.display = 'none';
+      }
+      
+      editingServiceId = id;
+      document.getElementById('sv-save-btn').textContent = 'Update Service';
+      document.getElementById('sv-cancel-btn').style.display = 'inline-block';
+      window.scrollTo(0,0);
+    };
+
+    document.getElementById('sv-cancel-btn').addEventListener('click', () => {
+      document.getElementById('serviceForm').reset();
+      document.getElementById('sv-img-preview').style.display = 'none';
+      editingServiceId = null;
+      currentSvImageUrl = null;
+      document.getElementById('sv-save-btn').textContent = 'Add Service';
+      document.getElementById('sv-cancel-btn').style.display = 'none';
+    });
+
+    document.getElementById('sv-image-file').addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const preview = document.getElementById('sv-img-preview');
+          preview.src = ev.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+
+    document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('sv-save-btn');
+      btn.textContent = 'Saving...';
+
+      try {
+        const file = document.getElementById('sv-image-file').files[0];
+        if (file) {
+          currentSvImageUrl = await uploadImage(file);
+        }
+
+        const payload = {
+          title: document.getElementById('sv-title').value,
+          icon: document.getElementById('sv-icon').value,
+          description: document.getElementById('sv-desc').value,
+          image_url: currentSvImageUrl
+        };
+
+        if (editingServiceId) {
+          await supabase.from('services').update(payload).eq('id', editingServiceId);
+          showToast('Service updated');
+        } else {
+          await supabase.from('services').insert([payload]);
+          showToast('Service added');
+        }
+        
+        document.getElementById('sv-cancel-btn').click();
+        loadServices();
+      } catch (err) {
+        showToast('Error saving service', true);
+        console.error(err);
+        btn.textContent = editingServiceId ? 'Update Service' : 'Add Service';
+      }
+    });
+
+    window.deleteService = async (id) => {
+      if (!confirm('Delete this service?')) return;
+      await supabase.from('services').delete().eq('id', id);
+      showToast('Service deleted');
+      loadServices();
+    };
+
+    // -- Enquiries --
+    async function loadEnquiries() {
+      const { data } = await supabase.from('enquiries').select('*').order('created_at', { ascending: false });
+      const tbody = document.getElementById('enquiryRows');
+      if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No enquiries yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(e => `
+        <tr>
+          <td>${new Date(e.created_at).toLocaleDateString()}</td>
+          <td>${e.name}</td>
+          <td>
+            <div>${e.email}</div>
+            <div style="color:var(--muted);font-size:0.8rem;">${e.phone || ''}</div>
+          </td>
+          <td><div style="max-width:250px;font-size:0.85rem;">${e.message}</div></td>
+          <td><span class="pill ${e.status}">${e.status}</span></td>
+          <td class="row-actions">
+            ${e.status === 'new' ? `<button onclick="updateEnquiry('${e.id}', 'replied')">Reply</button>` : ''}
+            ${e.status !== 'closed' ? `<button onclick="updateEnquiry('${e.id}', 'closed')">Close</button>` : ''}
+            <button class="del" onclick="deleteEnquiry('${e.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window.updateEnquiry = async (id, status) => {
+      await supabase.from('enquiries').update({ status }).eq('id', id);
+      showToast('Status updated');
+      loadEnquiries();
+    };
+
+    window.deleteEnquiry = async (id) => {
+      if (!confirm('Delete this enquiry?')) return;
+      await supabase.from('enquiries').delete().eq('id', id);
+      showToast('Enquiry deleted');
+      loadEnquiries();
+    };
+  </script>
+</body>
+</html>
