@@ -199,78 +199,82 @@
   </footer>
 
   <script>
-    window.addEventListener('supabaseReady', async () => {
-      // 1. Fetch Content
-      const { data: contentData } = await supabase.from('site_content').select('*');
-      if (contentData) {
-        const c = {};
-        contentData.forEach(row => c[row.key] = row.value);
+    // Wait until the HTML is fully loaded AND the db is ready
+    window.addEventListener('DOMContentLoaded', () => {
+      window.addEventListener('dbReady', async () => {
         
-        ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','footer_tagline'].forEach(id => {
-          if (document.getElementById(id)) document.getElementById(id).textContent = c[id] || '';
-        });
-        
-        if (c['about_image_url']) document.getElementById('about_image').style.backgroundImage = `url('${c['about_image_url']}')`;
-        if (c['contact_phone']) {
-           document.getElementById('nav-phone').textContent = "Call: " + c['contact_phone'];
-           document.getElementById('nav-phone').href = "tel:" + c['contact_phone'].replace(/\s/g, '');
+        // 1. Fetch Content
+        const { data: contentData } = await db.from('site_content').select('*');
+        if (contentData) {
+          const c = {};
+          contentData.forEach(row => c[row.key] = row.value);
+          
+          ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','footer_tagline'].forEach(id => {
+            if (document.getElementById(id)) document.getElementById(id).textContent = c[id] || '';
+          });
+          
+          if (c['about_image_url']) document.getElementById('about_image').style.backgroundImage = `url('${c['about_image_url']}')`;
+          if (c['contact_phone']) {
+             document.getElementById('nav-phone').textContent = "Call: " + c['contact_phone'];
+             document.getElementById('nav-phone').href = "tel:" + c['contact_phone'].replace(/\s/g, '');
+          }
         }
-      }
 
-      // 2. Fetch Services
-      const { data: services } = await supabase.from('services').select('*').order('display_order');
-      if (services && services.length) {
-        const grid = document.getElementById('serviceGrid');
-        const select = document.getElementById('eq-service');
-        grid.innerHTML = '';
-        
-        services.forEach(s => {
-          // Build Service Card
-          grid.innerHTML += `
-            <article class="service-card">
-              <div class="service-image" style="background-image: url('${s.image_url || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80'}');"></div>
-              <div class="service-copy">
-                <h3>${s.icon} ${s.title}</h3>
-                <p>${s.description}</p>
-                <a class="service-link" href="#contact">Enquire about this →</a>
-              </div>
-            </article>
-          `;
-          // Build select option
-          select.innerHTML += `<option value="${s.title}">${s.title}</option>`;
+        // 2. Fetch Services
+        const { data: services } = await db.from('services').select('*').order('display_order');
+        if (services && services.length) {
+          const grid = document.getElementById('serviceGrid');
+          const select = document.getElementById('eq-service');
+          grid.innerHTML = '';
+          
+          services.forEach(s => {
+            // Build Service Card
+            grid.innerHTML += `
+              <article class="service-card">
+                <div class="service-image" style="background-image: url('${s.image_url || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80'}');"></div>
+                <div class="service-copy">
+                  <h3>${s.icon} ${s.title}</h3>
+                  <p>${s.description}</p>
+                  <a class="service-link" href="#contact">Enquire about this →</a>
+                </div>
+              </article>
+            `;
+            // Build select option
+            select.innerHTML += `<option value="${s.title}">${s.title}</option>`;
+          });
+        }
+
+        // 3. Handle Contact Form Submit
+        document.getElementById('enquiryForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const btn = e.target.querySelector('button');
+          const msgBox = document.getElementById('formMsg');
+          btn.textContent = 'Sending...';
+          btn.disabled = true;
+
+          const payload = {
+            name: document.getElementById('eq-name').value,
+            email: document.getElementById('eq-email').value,
+            phone: document.getElementById('eq-phone').value,
+            service: document.getElementById('eq-service').value,
+            message: document.getElementById('eq-msg').value
+          };
+
+          const { error } = await db.from('enquiries').insert([payload]);
+
+          if (error) {
+            msgBox.textContent = 'Something went wrong. Please try again.';
+            msgBox.style.background = '#ffebee'; msgBox.style.color = '#c62828'; msgBox.style.display = 'block';
+          } else {
+            msgBox.textContent = 'Thank you! We will be in touch shortly.';
+            msgBox.style.background = '#e8f5e9'; msgBox.style.color = '#2e7d32'; msgBox.style.display = 'block';
+            e.target.reset();
+          }
+          
+          btn.textContent = 'Send Message';
+          btn.disabled = false;
         });
-      }
-    });
-
-    // Handle Contact Form Submit
-    document.getElementById('enquiryForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = e.target.querySelector('button');
-      const msgBox = document.getElementById('formMsg');
-      btn.textContent = 'Sending...';
-      btn.disabled = true;
-
-      const payload = {
-        name: document.getElementById('eq-name').value,
-        email: document.getElementById('eq-email').value,
-        phone: document.getElementById('eq-phone').value,
-        service: document.getElementById('eq-service').value,
-        message: document.getElementById('eq-msg').value
-      };
-
-      const { error } = await supabase.from('enquiries').insert([payload]);
-
-      if (error) {
-        msgBox.textContent = 'Something went wrong. Please try again.';
-        msgBox.style.background = '#ffebee'; msgBox.style.color = '#c62828'; msgBox.style.display = 'block';
-      } else {
-        msgBox.textContent = 'Thank you! We will be in touch shortly.';
-        msgBox.style.background = '#e8f5e9'; msgBox.style.color = '#2e7d32'; msgBox.style.display = 'block';
-        e.target.reset();
-      }
-      
-      btn.textContent = 'Send Message';
-      btn.disabled = false;
+      });
     });
   </script>
 </body>
