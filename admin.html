@@ -232,46 +232,38 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // Global variables
     let currentImageUrl = null;
     let currentSvImageUrl = null;
     let editingServiceId = null;
 
-    // Wait until the HTML is fully loaded AND the db is ready
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('dbReady', async () => {
+      const { data: { session } } = await db.auth.getSession();
+      if (session) showApp();
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      btn.textContent = 'Signing in...';
       
-      window.addEventListener('dbReady', async () => {
-        // Check if user is already logged in
-        const { data: { session } } = await db.auth.getSession();
-        if (session) showApp();
+      const { error } = await db.auth.signInWithPassword({
+        email: document.getElementById('email').value,
+        password: document.getElementById('pass').value
       });
+      
+      if (error) {
+        document.getElementById('loginErr').textContent = error.message;
+        document.getElementById('loginErr').style.display = 'block';
+        btn.textContent = 'Sign in';
+      } else {
+        document.getElementById('loginErr').style.display = 'none';
+        showApp();
+      }
+    });
 
-      // Login Handler
-      document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('loginBtn');
-        btn.textContent = 'Signing in...';
-        
-        const { error } = await db.auth.signInWithPassword({
-          email: document.getElementById('email').value,
-          password: document.getElementById('pass').value
-        });
-        
-        if (error) {
-          document.getElementById('loginErr').textContent = error.message;
-          document.getElementById('loginErr').style.display = 'block';
-          btn.textContent = 'Sign in';
-        } else {
-          document.getElementById('loginErr').style.display = 'none';
-          showApp();
-        }
-      });
-
-      // Logout Handler
-      document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await db.auth.signOut();
-        location.reload();
-      });
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await db.auth.signOut();
+      location.reload();
     });
 
     function showApp() {
@@ -289,7 +281,6 @@
       setTimeout(() => t.className = 'toast', 3000);
     }
 
-    // -- Tabs --
     document.querySelectorAll('.tab').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
@@ -299,20 +290,21 @@
       });
     });
 
-    // -- Image Upload Helper --
     async function uploadImage(file) {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
       const { error } = await db.storage.from('site-images').upload(fileName, file);
-      if (error) throw error;
+      if (error) throw new Error("Image upload failed: " + error.message);
       const { data } = db.storage.from('site-images').getPublicUrl(fileName);
       return data.publicUrl;
     }
 
-    // -- Content Editor --
+    // --- CONTENT EDITOR ---
     async function loadContent() {
-      const { data } = await db.from('site_content').select('*');
+      const { data, error } = await db.from('site_content').select('*');
+      if (error) return alert("Error loading content: " + error.message);
       if (!data) return;
+      
       const content = {};
       data.forEach(row => content[row.key] = row.value);
 
@@ -329,7 +321,7 @@
       }
     }
 
-    document.getElementById('about_image_file')?.addEventListener('change', (e) => {
+    document.getElementById('about_image_file').addEventListener('change', (e) => {
       if (e.target.files[0]) {
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -341,7 +333,7 @@
       }
     });
 
-    document.getElementById('contentForm')?.addEventListener('submit', async (e) => {
+    document.getElementById('contentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('saveContentBtn');
       btn.textContent = 'Saving...';
@@ -357,18 +349,20 @@
         updates.push({ key: 'about_image_url', value: currentImageUrl });
 
         for (const update of updates) {
-          await db.from('site_content').upsert(update);
+          const { error } = await db.from('site_content').upsert(update);
+          if (error) throw error;
         }
         
         showToast('Content saved successfully');
         document.getElementById('about_image_file').value = '';
       } catch (err) {
-        showToast('Error saving content: ' + err.message, true);
+        alert("SAVE FAILED!\n\n" + err.message);
+        showToast('Error saving content', true);
       }
       btn.textContent = 'Save All Content';
     });
 
-    // -- Services Manager --
+    // --- SERVICES MANAGER ---
     async function loadServices() {
       const { data } = await db.from('services').select('*').order('display_order');
       const tbody = document.getElementById('serviceRows');
@@ -411,7 +405,7 @@
       window.scrollTo(0,0);
     };
 
-    document.getElementById('sv-cancel-btn')?.addEventListener('click', () => {
+    document.getElementById('sv-cancel-btn').addEventListener('click', () => {
       document.getElementById('serviceForm').reset();
       document.getElementById('sv-img-preview').style.display = 'none';
       editingServiceId = null;
@@ -420,7 +414,7 @@
       document.getElementById('sv-cancel-btn').style.display = 'none';
     });
 
-    document.getElementById('sv-image-file')?.addEventListener('change', (e) => {
+    document.getElementById('sv-image-file').addEventListener('change', (e) => {
       if (e.target.files[0]) {
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -432,7 +426,7 @@
       }
     });
 
-    document.getElementById('serviceForm')?.addEventListener('submit', async (e) => {
+    document.getElementById('serviceForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('sv-save-btn');
       btn.textContent = 'Saving...';
@@ -450,19 +444,23 @@
           image_url: currentSvImageUrl
         };
 
+        let error;
         if (editingServiceId) {
-          await db.from('services').update(payload).eq('id', editingServiceId);
-          showToast('Service updated');
+          const res = await db.from('services').update(payload).eq('id', editingServiceId);
+          error = res.error;
         } else {
-          await db.from('services').insert([payload]);
-          showToast('Service added');
+          const res = await db.from('services').insert([payload]);
+          error = res.error;
         }
+
+        if (error) throw error;
         
+        showToast(editingServiceId ? 'Service updated' : 'Service added');
         document.getElementById('sv-cancel-btn').click();
         loadServices();
       } catch (err) {
+        alert("SAVE FAILED!\n\n" + err.message);
         showToast('Error saving service', true);
-        console.error(err);
         btn.textContent = editingServiceId ? 'Update Service' : 'Add Service';
       }
     });
@@ -474,7 +472,7 @@
       loadServices();
     };
 
-    // -- Enquiries --
+    // --- ENQUIRIES ---
     async function loadEnquiries() {
       const { data } = await db.from('enquiries').select('*').order('created_at', { ascending: false });
       const tbody = document.getElementById('enquiryRows');
