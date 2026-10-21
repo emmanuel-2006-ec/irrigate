@@ -147,7 +147,7 @@
           <h2>Everything your outdoor space needs.</h2>
         </div>
         <div class="service-grid" id="serviceGrid">
-           <p style="text-align:center; width:100%; color:var(--muted);">Loading services...</p>
+           <!-- Services will appear here -->
         </div>
       </div>
     </section>
@@ -200,49 +200,62 @@
 
   <script>
     window.addEventListener('dbReady', async () => {
-      // 1. Fetch Content (noCache forces fresh data)
-      const { data: contentData } = await db.from('site_content').select('*').noCache();
-      if (contentData) {
-        const c = {};
-        contentData.forEach(row => c[row.key] = row.value);
-        
-        ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','footer_tagline'].forEach(id => {
-          if (document.getElementById(id) && c[id]) {
-            document.getElementById(id).textContent = c[id];
+      try {
+        // 1. Fetch Content
+        const { data: contentData } = await db.from('site_content').select('*');
+        if (contentData) {
+          const c = {};
+          contentData.forEach(row => c[row.key] = row.value);
+          
+          ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','footer_tagline'].forEach(id => {
+            if (document.getElementById(id) && c[id]) {
+              document.getElementById(id).textContent = c[id];
+            }
+          });
+          
+          if (c['about_image_url']) {
+            document.getElementById('about_image').style.backgroundImage = `url('${c['about_image_url']}')`;
           }
-        });
-        
-        if (c['about_image_url']) {
-          document.getElementById('about_image').style.backgroundImage = `url('${c['about_image_url']}')`;
+          if (c['contact_phone']) {
+              document.getElementById('nav-phone').textContent = "Call: " + c['contact_phone'];
+              document.getElementById('nav-phone').href = "tel:" + c['contact_phone'].replace(/\s/g, '');
+          }
         }
-        if (c['contact_phone']) {
-            document.getElementById('nav-phone').textContent = "Call: " + c['contact_phone'];
-            document.getElementById('nav-phone').href = "tel:" + c['contact_phone'].replace(/\s/g, '');
-        }
-      }
 
-      // 2. Fetch Services (noCache forces fresh data)
-      const { data: services } = await db.from('services').select('*').order('display_order').noCache();
-      const grid = document.getElementById('serviceGrid');
-      const select = document.getElementById('eq-service');
-      
-      if (services && services.length) {
-        grid.innerHTML = '';
-        services.forEach(s => {
-          grid.innerHTML += `
-            <article class="service-card">
-              <div class="service-image" style="background-image: url('${s.image_url || 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80'}');"></div>
-              <div class="service-copy">
-                <h3>${s.icon} ${s.title}</h3>
-                <p>${s.description}</p>
-                <a class="service-link" href="#contact">Enquire about this →</a>
-              </div>
-            </article>
-          `;
-          select.innerHTML += `<option value="${s.title}">${s.title}</option>`;
-        });
-      } else {
-        grid.innerHTML = '<p style="text-align:center; width:100%; color:var(--muted);">No services added yet.</p>';
+        // 2. Fetch Services
+        const { data: services } = await db.from('services').select('*').order('display_order');
+        const grid = document.getElementById('serviceGrid');
+        const select = document.getElementById('eq-service');
+        
+        if (services && services.length > 0) {
+          grid.innerHTML = ''; // Clear the "Loading" text
+          
+          services.forEach(s => {
+            // If no image, use the emoji in the background
+            const imgStyle = s.image_url 
+              ? `background-image: url('${s.image_url}');`
+              : `background-color: var(--sand); display: grid; place-items: center; font-size: 4rem;`;
+            
+            const content = s.image_url ? '' : s.icon;
+
+            grid.innerHTML += `
+              <article class="service-card">
+                <div class="service-image" style="${imgStyle}">${content}</div>
+                <div class="service-copy">
+                  <h3>${s.title}</h3>
+                  <p>${s.description}</p>
+                  <a class="service-link" href="#contact">Enquire about this →</a>
+                </div>
+              </article>
+            `;
+            select.innerHTML += `<option value="${s.title}">${s.title}</option>`;
+          });
+        } else {
+          grid.innerHTML = '<p style="text-align:center; width:100%; color:var(--muted);">No services added yet.</p>';
+        }
+      } catch (err) {
+        console.error("Load error:", err);
+        document.getElementById('serviceGrid').innerHTML = '<p style="text-align:center; width:100%; color:red;">Error loading services.</p>';
       }
     });
 
