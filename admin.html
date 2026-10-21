@@ -372,7 +372,11 @@
       }
       tbody.innerHTML = data.map(s => `
         <tr>
-          <td>${s.image_url ? `<img src="${s.image_url}" style="width:60px;height:40px;object-fit:cover;border-radius:4px;">` : s.icon}</td>
+          <td>
+            ${s.image_url 
+              ? `<img src="${s.image_url}" style="width:60px;height:40px;object-fit:cover;border-radius:4px;">` 
+              : `<div style="width:60px;height:40px;background:var(--sand);border-radius:4px;display:grid;place-items:center;font-size:1.2rem;">${s.icon}</div>`}
+          </td>
           <td><strong>${s.title}</strong></td>
           <td class="row-actions">
             <button onclick="editService('${s.id}')">Edit</button>
