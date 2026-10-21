@@ -232,36 +232,46 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // Global variables
     let currentImageUrl = null;
     let currentSvImageUrl = null;
     let editingServiceId = null;
 
-    // -- Init --
-    window.addEventListener('supabaseReady', async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) showApp();
-    });
-
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('loginBtn');
-      btn.textContent = 'Signing in...';
-      const { error } = await supabase.auth.signInWithPassword({
-        email: document.getElementById('email').value,
-        password: document.getElementById('pass').value
+    // Wait until the HTML is fully loaded AND the db is ready
+    window.addEventListener('DOMContentLoaded', () => {
+      
+      window.addEventListener('dbReady', async () => {
+        // Check if user is already logged in
+        const { data: { session } } = await db.auth.getSession();
+        if (session) showApp();
       });
-      if (error) {
-        document.getElementById('loginErr').style.display = 'block';
-        btn.textContent = 'Sign in';
-      } else {
-        document.getElementById('loginErr').style.display = 'none';
-        showApp();
-      }
-    });
 
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      location.reload();
+      // Login Handler
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn');
+        btn.textContent = 'Signing in...';
+        
+        const { error } = await db.auth.signInWithPassword({
+          email: document.getElementById('email').value,
+          password: document.getElementById('pass').value
+        });
+        
+        if (error) {
+          document.getElementById('loginErr').textContent = error.message;
+          document.getElementById('loginErr').style.display = 'block';
+          btn.textContent = 'Sign in';
+        } else {
+          document.getElementById('loginErr').style.display = 'none';
+          showApp();
+        }
+      });
+
+      // Logout Handler
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await db.auth.signOut();
+        location.reload();
+      });
     });
 
     function showApp() {
@@ -293,15 +303,15 @@
     async function uploadImage(file) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const { error } = await supabase.storage.from('site-images').upload(fileName, file);
+      const { error } = await db.storage.from('site-images').upload(fileName, file);
       if (error) throw error;
-      const { data } = supabase.storage.from('site-images').getPublicUrl(fileName);
+      const { data } = db.storage.from('site-images').getPublicUrl(fileName);
       return data.publicUrl;
     }
 
     // -- Content Editor --
     async function loadContent() {
-      const { data } = await supabase.from('site_content').select('*');
+      const { data } = await db.from('site_content').select('*');
       if (!data) return;
       const content = {};
       data.forEach(row => content[row.key] = row.value);
@@ -319,7 +329,7 @@
       }
     }
 
-    document.getElementById('about_image_file').addEventListener('change', (e) => {
+    document.getElementById('about_image_file')?.addEventListener('change', (e) => {
       if (e.target.files[0]) {
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -331,7 +341,7 @@
       }
     });
 
-    document.getElementById('contentForm').addEventListener('submit', async (e) => {
+    document.getElementById('contentForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('saveContentBtn');
       btn.textContent = 'Saving...';
@@ -343,29 +353,24 @@
         }
 
         const fields = ['hero_eyebrow','hero_title','hero_subtitle','about_heading','about_text','approach_heading','approach_text','contact_heading','contact_text','contact_phone','contact_email','footer_tagline'];
-        const updates = fields.map(f => ({
-          key: f,
-          value: document.getElementById(f).value
-        }));
+        const updates = fields.map(f => ({ key: f, value: document.getElementById(f).value }));
         updates.push({ key: 'about_image_url', value: currentImageUrl });
 
-        // Upsert each row (requires RLS authenticated access)
         for (const update of updates) {
-          await supabase.from('site_content').upsert(update);
+          await db.from('site_content').upsert(update);
         }
         
         showToast('Content saved successfully');
         document.getElementById('about_image_file').value = '';
       } catch (err) {
-        showToast('Error saving content', true);
-        console.error(err);
+        showToast('Error saving content: ' + err.message, true);
       }
       btn.textContent = 'Save All Content';
     });
 
     // -- Services Manager --
     async function loadServices() {
-      const { data } = await supabase.from('services').select('*').order('display_order');
+      const { data } = await db.from('services').select('*').order('display_order');
       const tbody = document.getElementById('serviceRows');
       if (!data || !data.length) {
         tbody.innerHTML = '<tr><td colspan="3" style="text-align:center">No services yet.</td></tr>';
@@ -384,7 +389,7 @@
     }
 
     window.editService = async (id) => {
-      const { data } = await supabase.from('services').select('*').eq('id', id).single();
+      const { data } = await db.from('services').select('*').eq('id', id).single();
       if (!data) return;
       document.getElementById('sv-id').value = data.id;
       document.getElementById('sv-title').value = data.title;
@@ -406,7 +411,7 @@
       window.scrollTo(0,0);
     };
 
-    document.getElementById('sv-cancel-btn').addEventListener('click', () => {
+    document.getElementById('sv-cancel-btn')?.addEventListener('click', () => {
       document.getElementById('serviceForm').reset();
       document.getElementById('sv-img-preview').style.display = 'none';
       editingServiceId = null;
@@ -415,7 +420,7 @@
       document.getElementById('sv-cancel-btn').style.display = 'none';
     });
 
-    document.getElementById('sv-image-file').addEventListener('change', (e) => {
+    document.getElementById('sv-image-file')?.addEventListener('change', (e) => {
       if (e.target.files[0]) {
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -427,7 +432,7 @@
       }
     });
 
-    document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+    document.getElementById('serviceForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('sv-save-btn');
       btn.textContent = 'Saving...';
@@ -446,10 +451,10 @@
         };
 
         if (editingServiceId) {
-          await supabase.from('services').update(payload).eq('id', editingServiceId);
+          await db.from('services').update(payload).eq('id', editingServiceId);
           showToast('Service updated');
         } else {
-          await supabase.from('services').insert([payload]);
+          await db.from('services').insert([payload]);
           showToast('Service added');
         }
         
@@ -464,14 +469,14 @@
 
     window.deleteService = async (id) => {
       if (!confirm('Delete this service?')) return;
-      await supabase.from('services').delete().eq('id', id);
+      await db.from('services').delete().eq('id', id);
       showToast('Service deleted');
       loadServices();
     };
 
     // -- Enquiries --
     async function loadEnquiries() {
-      const { data } = await supabase.from('enquiries').select('*').order('created_at', { ascending: false });
+      const { data } = await db.from('enquiries').select('*').order('created_at', { ascending: false });
       const tbody = document.getElementById('enquiryRows');
       if (!data || !data.length) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">No enquiries yet.</td></tr>';
@@ -497,14 +502,14 @@
     }
 
     window.updateEnquiry = async (id, status) => {
-      await supabase.from('enquiries').update({ status }).eq('id', id);
+      await db.from('enquiries').update({ status }).eq('id', id);
       showToast('Status updated');
       loadEnquiries();
     };
 
     window.deleteEnquiry = async (id) => {
       if (!confirm('Delete this enquiry?')) return;
-      await supabase.from('enquiries').delete().eq('id', id);
+      await db.from('enquiries').delete().eq('id', id);
       showToast('Enquiry deleted');
       loadEnquiries();
     };
